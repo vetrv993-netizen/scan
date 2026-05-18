@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: nutrition
+    description: Nutrition analysis operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /nutrition/analyze:
+    post:
+      operationId: analyzeNutrition
+      tags: [nutrition]
+      summary: Analyze food nutrition from image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeNutritionRequest"
+      responses:
+        "200":
+          description: Nutrition analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoredAnalysis"
+        "422":
+          description: Cannot analyze image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /nutrition/analyses:
+    get:
+      operationId: listAnalyses
+      tags: [nutrition]
+      summary: Get all saved analyses
+      responses:
+        "200":
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoredAnalysis"
+  /nutrition/analyses/{id}:
+    delete:
+      operationId: deleteAnalysis
+      tags: [nutrition]
+      summary: Delete an analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Analysis deleted
+        "404":
+          description: Analysis not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +99,126 @@ components:
           type: string
       required:
         - status
-
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    AnalyzeNutritionRequest:
+      type: object
+      properties:
+        imageBase64:
+          type: string
+        model:
+          type: string
+          enum: [auto, openai, gemini, claude]
+      required:
+        - imageBase64
+    BilingualText:
+      type: object
+      properties:
+        en:
+          type: string
+        ar:
+          type: string
+      required: [en, ar]
+    NutritionMacros:
+      type: object
+      properties:
+        protein:
+          type: number
+        fat:
+          type: number
+        saturatedFat:
+          type: number
+        carbohydrates:
+          type: number
+        sugar:
+          type: number
+        fiber:
+          type: number
+      required: [protein, fat, saturatedFat, carbohydrates, sugar, fiber]
+    NutritionMinerals:
+      type: object
+      properties:
+        sodium:
+          type: number
+        calcium:
+          type: number
+        iron:
+          type: number
+      required: [sodium, calcium, iron]
+    NutritionWarnings:
+      type: object
+      properties:
+        diabetes:
+          type: boolean
+        bloodPressure:
+          type: boolean
+        allergies:
+          type: array
+          items:
+            type: string
+        kidney:
+          type: boolean
+        lowCarb:
+          type: boolean
+        glutenSensitivity:
+          type: boolean
+        lactoseIntolerance:
+          type: boolean
+        highFat:
+          type: boolean
+        highSugar:
+          type: boolean
+      required: [diabetes, bloodPressure, allergies, kidney, lowCarb, glutenSensitivity, lactoseIntolerance, highFat, highSugar]
+    NutritionData:
+      type: object
+      properties:
+        foodName:
+          $ref: "#/components/schemas/BilingualText"
+        description:
+          $ref: "#/components/schemas/BilingualText"
+        servingSize:
+          type: string
+        calories:
+          type: number
+        macros:
+          $ref: "#/components/schemas/NutritionMacros"
+        minerals:
+          $ref: "#/components/schemas/NutritionMinerals"
+        vitamins:
+          type: array
+          items:
+            type: string
+        healthScore:
+          type: number
+        imageQuality:
+          type: string
+        isEstimated:
+          type: boolean
+        healthBenefits:
+          $ref: "#/components/schemas/BilingualText"
+        healthCautions:
+          $ref: "#/components/schemas/BilingualText"
+        warnings:
+          $ref: "#/components/schemas/NutritionWarnings"
+      required: [foodName, description, servingSize, calories, macros, minerals, vitamins, healthScore, imageQuality, isEstimated, healthBenefits, healthCautions, warnings]
+    StoredAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+        nutritionData:
+          $ref: "#/components/schemas/NutritionData"
+        modelUsed:
+          type: string
+        imageThumb:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, nutritionData, modelUsed, createdAt]

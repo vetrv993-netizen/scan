@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "j5yBU-f9u5-z45KAGSn9q"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "nutrition ai app icon"
+
+[[generated]]
+id = "c1ssq4ESygmBaaA5rlww3"
+uri = "file://artifacts/mobile/assets/images/food_hero.png"
+type = "image"
+title = "food hero background"
