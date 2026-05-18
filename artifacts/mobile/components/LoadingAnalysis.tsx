@@ -9,61 +9,50 @@ interface LoadingAnalysisProps {
 
 export function LoadingAnalysis({ stages, isRTL = false }: LoadingAnalysisProps) {
   const colors = useColors();
-  const [currentStage, setCurrentStage] = useState(0);
+  const [stageIndex, setStageIndex] = useState(0);
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scale1 = useRef(new Animated.Value(1)).current;
+  const scale2 = useRef(new Animated.Value(1)).current;
+  const scale3 = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Rotate animation
+    // Ring rotation
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 1500,
+        duration: 1200,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // Pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // Ripple dots
+    const ripple = (anim: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, { toValue: 1.5, duration: 600, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.delay(600),
+        ])
+      ).start();
+
+    ripple(scale1, 0);
+    ripple(scale2, 300);
+    ripple(scale3, 600);
 
     // Stage cycling
     const interval = setInterval(() => {
-      setCurrentStage((prev) => {
-        const next = (prev + 1) % stages.length;
-        // Fade out/in
-        Animated.sequence([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        return next;
-      });
-    }, 2500);
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+      setStageIndex((prev) => (prev + 1) % stages.length);
+    }, 2800);
 
     return () => clearInterval(interval);
-  }, [stages.length, rotateAnim, pulseAnim, fadeAnim]);
+  }, [stages.length, rotateAnim, fadeAnim, scale1, scale2, scale3]);
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -72,27 +61,41 @@ export function LoadingAnalysis({ stages, isRTL = false }: LoadingAnalysisProps)
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Spinner */}
-      <View style={styles.spinnerWrapper}>
-        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-          <View
-            style={[styles.outerRing, { borderColor: colors.primary + "30" }]}
-          >
-            <View
-              style={[styles.innerRing, { borderColor: colors.primary + "60" }]}
-            >
-              <Animated.View
-                style={[
-                  styles.spinArc,
-                  {
-                    borderTopColor: colors.primary,
-                    transform: [{ rotate: spin }],
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        </Animated.View>
+      {/* Animated rings */}
+      <View style={styles.ringContainer}>
+        <View style={[styles.outerRing, { borderColor: colors.primary + "20" }]} />
+        <View style={[styles.midRing, { borderColor: colors.primary + "40" }]} />
+        <Animated.View
+          style={[
+            styles.spinRing,
+            {
+              borderTopColor: colors.primary,
+              borderRightColor: colors.primary + "40",
+              borderBottomColor: "transparent",
+              borderLeftColor: "transparent",
+              transform: [{ rotate: spin }],
+            },
+          ]}
+        />
+        {/* Center icon */}
+        <View style={[styles.centerDot, { backgroundColor: colors.primary }]} />
+      </View>
+
+      {/* Ripple dots */}
+      <View style={styles.dots}>
+        {[scale1, scale2, scale3].map((anim, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.rippleDot,
+              {
+                backgroundColor: colors.primary,
+                transform: [{ scale: anim }],
+                opacity: anim.interpolate({ inputRange: [1, 1.5], outputRange: [0.9, 0.3] }),
+              },
+            ]}
+          />
+        ))}
       </View>
 
       {/* Stage text */}
@@ -102,29 +105,17 @@ export function LoadingAnalysis({ stages, isRTL = false }: LoadingAnalysisProps)
           {
             color: colors.foreground,
             opacity: fadeAnim,
-            textAlign: isRTL ? "right" : "center",
+            textAlign: "center",
           },
         ]}
       >
-        {stages[currentStage]}
+        {stages[stageIndex]}
       </Animated.Text>
 
-      {/* Progress dots */}
-      <View style={styles.dots}>
-        {stages.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              {
-                backgroundColor:
-                  i === currentStage ? colors.primary : colors.border,
-                width: i === currentStage ? 20 : 8,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      {/* Sub text */}
+      <Text style={[styles.subText, { color: colors.mutedForeground }]}>
+        {isRTL ? "الذكاء الاصطناعي يعمل بأقصى سرعة..." : "AI working at full speed..."}
+      </Text>
     </View>
   );
 }
@@ -134,48 +125,60 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 40,
+    gap: 28,
+    paddingHorizontal: 40,
   },
-  spinnerWrapper: {
-    marginBottom: 32,
+  ringContainer: {
+    width: 110,
+    height: 110,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   outerRing: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
   },
-  innerRing: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+  midRing: {
+    position: "absolute",
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
   },
-  spinArc: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  spinRing: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 3,
-    borderColor: "transparent",
   },
-  stageText: {
-    fontSize: 16,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 24,
+  centerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
   dots: {
     flexDirection: "row",
-    gap: 6,
+    gap: 12,
     alignItems: "center",
   },
-  dot: {
-    height: 8,
-    borderRadius: 4,
+  rippleDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  stageText: {
+    fontSize: 17,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 26,
+  },
+  subText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
   },
 });

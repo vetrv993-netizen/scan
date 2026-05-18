@@ -7,12 +7,12 @@ export type AIModel = "auto" | "openai" | "gemini" | "claude";
 
 const NUTRITION_PROMPT = `You are an expert nutritionist and food scientist. Carefully analyze the food visible in this image.
 
-Return ONLY a valid JSON object with this EXACT structure. No markdown, no code blocks, no explanation — pure JSON only:
+Return ONLY a valid JSON object — no markdown, no code blocks, no preamble — pure JSON:
 
 {
   "foodName": { "en": "Food name in English", "ar": "اسم الطعام بالعربية" },
-  "description": { "en": "1-2 sentence description in English", "ar": "وصف مختصر بالعربية" },
-  "servingSize": "standard serving size (e.g. 1 cup / 200g / 1 medium piece)",
+  "description": { "en": "1-2 sentence description", "ar": "وصف مختصر" },
+  "servingSize": "standard serving (e.g. 1 cup / 200g / 1 piece)",
   "calories": 250,
   "macros": {
     "protein": 10.5,
@@ -22,22 +22,18 @@ Return ONLY a valid JSON object with this EXACT structure. No markdown, no code 
     "sugar": 5.2,
     "fiber": 3.0
   },
-  "minerals": {
-    "sodium": 450,
-    "calcium": 120,
-    "iron": 2.5
-  },
-  "vitamins": ["Vitamin C", "Vitamin B12", "Vitamin A"],
+  "minerals": { "sodium": 450, "calcium": 120, "iron": 2.5 },
+  "vitamins": ["Vitamin C", "Vitamin B12"],
   "healthScore": 72,
   "imageQuality": "clear",
   "isEstimated": false,
   "healthBenefits": {
-    "en": "Detailed health benefits in 2-3 sentences covering energy, nutrients, and body systems.",
-    "ar": "فوائد صحية تفصيلية في جملتين أو ثلاث تتناول الطاقة والمغذيات وأجهزة الجسم."
+    "en": "Detailed health benefits in 2-3 sentences.",
+    "ar": "فوائد صحية تفصيلية في جملتين أو ثلاث."
   },
   "healthCautions": {
-    "en": "Who should limit this and why — 1-2 clear sentences.",
-    "ar": "من يجب أن يحد من تناوله ولماذا — جملة أو جملتان واضحتان."
+    "en": "Who should limit this and why.",
+    "ar": "من يجب أن يحد من تناوله ولماذا."
   },
   "warnings": {
     "diabetes": false,
@@ -53,16 +49,16 @@ Return ONLY a valid JSON object with this EXACT structure. No markdown, no code 
 }
 
 Rules:
-- calories: kcal as number
+- calories: kcal as number only
 - protein, fat, saturatedFat, carbohydrates, sugar, fiber: grams as numbers
 - sodium, calcium, iron: milligrams as numbers
-- healthScore: 0-100 (100 = whole unprocessed superfood, 0 = ultra-processed junk)
+- healthScore: 0-100 (100 = whole unprocessed superfood, 0 = ultra-processed)
 - imageQuality: "clear" | "blurry" | "unclear"
-- isEstimated: true only when image quality prevents accurate analysis
-- warnings.allergies: array like ["gluten", "dairy", "nuts", "shellfish", "eggs", "soy"]
+- isEstimated: true only if image quality prevents precise analysis
+- allergies: array like ["gluten", "dairy", "nuts", "shellfish", "eggs", "soy"]
 - Set warning flags true when food significantly impacts those conditions
-- Arabic text must be natural, fluent Modern Standard Arabic
-- Return ONLY the JSON. No surrounding text whatsoever.`;
+- Arabic must be natural fluent Modern Standard Arabic
+- Return ONLY the JSON. Nothing else.`;
 
 export interface NutritionData {
   foodName: { en: string; ar: string };
@@ -101,15 +97,15 @@ export interface NutritionData {
   };
 }
 
+type ModelName = "openai" | "gemini" | "claude";
+
 function extractJson(text: string): NutritionData {
   const cleaned = text.trim();
-  // Try direct parse first
   try {
     return JSON.parse(cleaned) as NutritionData;
   } catch {
-    // Try extracting JSON object from text
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON object found in response");
+    if (!match) throw new Error("No JSON in response");
     return JSON.parse(match[0]) as NutritionData;
   }
 }
@@ -122,17 +118,13 @@ async function analyzeWithOpenAI(imageBase64: string): Promise<NutritionData> {
       {
         role: "user",
         content: [
-          {
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-          },
+          { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
           { type: "text", text: NUTRITION_PROMPT },
         ],
       },
     ],
   });
-  const text = response.choices[0]?.message?.content ?? "";
-  return extractJson(text);
+  return extractJson(response.choices[0]?.message?.content ?? "");
 }
 
 async function analyzeWithGemini(imageBase64: string): Promise<NutritionData> {
@@ -149,8 +141,7 @@ async function analyzeWithGemini(imageBase64: string): Promise<NutritionData> {
     ],
     config: { maxOutputTokens: 2048 },
   });
-  const text = response.text ?? "";
-  return extractJson(text);
+  return extractJson(response.text ?? "");
 }
 
 async function analyzeWithClaude(imageBase64: string): Promise<NutritionData> {
@@ -161,25 +152,21 @@ async function analyzeWithClaude(imageBase64: string): Promise<NutritionData> {
       {
         role: "user",
         content: [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: "image/jpeg",
-              data: imageBase64,
-            },
-          },
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageBase64 } },
           { type: "text", text: NUTRITION_PROMPT },
         ],
       },
     ],
   });
   const block = response.content[0];
-  const text = block.type === "text" ? block.text : "";
-  return extractJson(text);
+  return extractJson(block.type === "text" ? block.text : "");
 }
 
-type ModelName = "openai" | "gemini" | "claude";
+async function analyzeWithModel(model: ModelName, imageBase64: string): Promise<NutritionData> {
+  if (model === "openai") return analyzeWithOpenAI(imageBase64);
+  if (model === "gemini") return analyzeWithGemini(imageBase64);
+  return analyzeWithClaude(imageBase64);
+}
 
 function getModelOrder(preferred: AIModel): ModelName[] {
   const all: ModelName[] = ["openai", "gemini", "claude"];
@@ -187,26 +174,50 @@ function getModelOrder(preferred: AIModel): ModelName[] {
   return [preferred as ModelName, ...all.filter((m) => m !== preferred)];
 }
 
+const MODEL_TIMEOUT_MS = 35_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Model timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export async function analyzeNutrition(
   imageBase64: string,
   preferredModel: AIModel = "auto"
 ): Promise<{ data: NutritionData; modelUsed: string }> {
-  const modelOrder = getModelOrder(preferredModel);
+  if (preferredModel === "auto") {
+    // Race all models in parallel — fastest valid response wins
+    logger.info("Racing all AI models in parallel");
+    const modelPromises = (["openai", "gemini", "claude"] as ModelName[]).map((model) =>
+      withTimeout(analyzeWithModel(model, imageBase64), MODEL_TIMEOUT_MS)
+        .then((data) => {
+          logger.info({ model }, "Model responded first");
+          return { data, modelUsed: model };
+        })
+        .catch((err) => {
+          logger.warn({ model, err }, "Model failed in race");
+          return Promise.reject(err);
+        })
+    );
 
-  for (const model of modelOrder) {
     try {
-      logger.info({ model }, "Attempting nutrition analysis");
-      let data: NutritionData;
+      return await Promise.any(modelPromises);
+    } catch {
+      throw new Error("All AI models failed to analyze the image");
+    }
+  }
 
-      if (model === "openai") {
-        data = await analyzeWithOpenAI(imageBase64);
-      } else if (model === "gemini") {
-        data = await analyzeWithGemini(imageBase64);
-      } else {
-        data = await analyzeWithClaude(imageBase64);
-      }
-
-      logger.info({ model }, "Nutrition analysis succeeded");
+  // Specific model: try preferred first, then fall back
+  const order = getModelOrder(preferredModel);
+  for (const model of order) {
+    try {
+      logger.info({ model }, "Trying model");
+      const data = await withTimeout(analyzeWithModel(model, imageBase64), MODEL_TIMEOUT_MS);
+      logger.info({ model }, "Analysis succeeded");
       return { data, modelUsed: model };
     } catch (err) {
       logger.warn({ model, err }, "Model failed, trying next");

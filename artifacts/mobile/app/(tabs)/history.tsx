@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -31,11 +31,7 @@ export default function HistoryScreen() {
       t.history.confirmDelete,
       [
         { text: t.history.no, style: "cancel" },
-        {
-          text: t.history.yes,
-          style: "destructive",
-          onPress: () => deleteAnalysis(id),
-        },
+        { text: t.history.yes, style: "destructive", onPress: () => deleteAnalysis(id) },
       ]
     );
   };
@@ -46,11 +42,7 @@ export default function HistoryScreen() {
       t.history.confirmClear,
       [
         { text: t.history.no, style: "cancel" },
-        {
-          text: t.history.yes,
-          style: "destructive",
-          onPress: () => clearHistory(),
-        },
+        { text: t.history.yes, style: "destructive", onPress: clearHistory },
       ]
     );
   };
@@ -58,36 +50,38 @@ export default function HistoryScreen() {
   const renderItem = ({ item }: { item: StoredAnalysis }) => (
     <HistoryItem
       analysis={item}
-      onPress={() =>
-        router.push({ pathname: "/result/[id]", params: { id: item.id } })
-      }
+      onPress={() => router.push({ pathname: "/result/[id]", params: { id: item.id } })}
       onDelete={() => handleDeleteItem(item.id)}
     />
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View
         style={[
           styles.header,
           {
-            paddingTop: topPadding + 16,
+            paddingTop: topPadding + 20,
             backgroundColor: colors.background,
             borderBottomColor: colors.border,
             flexDirection: isRTL ? "row-reverse" : "row",
           },
         ]}
       >
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          {t.history.title}
-        </Text>
+        <View>
+          <Text style={[styles.title, { color: colors.foreground }]}>{t.history.title}</Text>
+          {history.length > 0 && (
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              {history.length} {isRTL ? "تحليل" : "analyses"}
+            </Text>
+          )}
+        </View>
         {history.length > 0 && (
           <TouchableOpacity
             onPress={handleClearAll}
-            style={[styles.clearBtn, { backgroundColor: colors.destructive + "15" }]}
+            style={[styles.clearBtn, { backgroundColor: colors.destructive + "14" }]}
           >
-            <Feather name="trash-2" size={15} color={colors.destructive} />
+            <Feather name="trash-2" size={14} color={colors.destructive} />
             <Text style={[styles.clearText, { color: colors.destructive }]}>
               {t.history.clearAll}
             </Text>
@@ -97,20 +91,18 @@ export default function HistoryScreen() {
 
       {history.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Feather name="clock" size={60} color={colors.border} />
-          <Text
-            style={[
-              styles.emptyText,
-              { color: colors.mutedForeground },
-            ]}
-          >
+          <View style={[styles.emptyIcon, { backgroundColor: colors.primary + "14" }]}>
+            <Feather name="clock" size={44} color={colors.primary} />
+          </View>
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
             {t.history.empty}
           </Text>
           <TouchableOpacity
             style={[styles.startBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push("/(tabs)/analyze")}
           >
-            <Text style={styles.startBtnText}>
+            <Feather name="camera" size={16} color={colors.primaryForeground} />
+            <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
               {isRTL ? "ابدأ التحليل" : "Start Analyzing"}
             </Text>
           </TouchableOpacity>
@@ -135,50 +127,31 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    justifyContent: "space-between",
-    alignItems: "center",
+    paddingHorizontal: 20, paddingBottom: 16,
+    borderBottomWidth: 1, justifyContent: "space-between", alignItems: "flex-end",
   },
-  title: {
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-  },
+  title: { fontSize: 26, fontFamily: "Inter_700Bold" },
+  subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   clearBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10,
   },
-  clearText: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-  },
+  clearText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    paddingHorizontal: 40,
+    flex: 1, alignItems: "center", justifyContent: "center",
+    gap: 18, paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    width: 96, height: 96, borderRadius: 28,
+    alignItems: "center", justifyContent: "center",
   },
   emptyText: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 26,
+    fontSize: 15, fontFamily: "Inter_400Regular",
+    textAlign: "center", lineHeight: 26,
   },
   startBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 8,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, marginTop: 4,
   },
-  startBtnText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-  },
+  startBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
 });

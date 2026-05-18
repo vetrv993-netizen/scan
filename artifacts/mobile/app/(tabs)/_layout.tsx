@@ -20,6 +20,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "camera", selected: "camera.fill" }} />
         <Label>Analyze</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="meal">
+        <Icon sf={{ default: "fork.knife", selected: "fork.knife" }} />
+        <Label>My Meal</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="history">
         <Icon sf={{ default: "clock", selected: "clock.fill" }} />
         <Label>History</Label>
@@ -34,9 +38,10 @@ function NativeTabLayout() {
 
 function ClassicTabLayout() {
   const colors = useColors();
-  const { t, isDark } = useApp();
+  const { t, isDark, currentMeal } = useApp();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
+  const mealCount = currentMeal.length;
 
   return (
     <Tabs
@@ -87,6 +92,27 @@ function ClassicTabLayout() {
               <SymbolView name="camera" tintColor={color} size={24} />
             ) : (
               <Feather name="camera" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="meal"
+        options={{
+          title: t.tabs.meal,
+          tabBarBadge: mealCount > 0 ? mealCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.primary,
+            color: colors.primaryForeground,
+            fontSize: 10,
+            minWidth: 16,
+            height: 16,
+            lineHeight: 16,
+          },
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="fork.knife" tintColor={color} size={24} />
+            ) : (
+              <Feather name="pie-chart" size={22} color={color} />
             ),
         }}
       />

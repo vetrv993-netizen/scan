@@ -9,6 +9,7 @@ interface NutritionBarProps {
   maxValue: number;
   color?: string;
   isRTL?: boolean;
+  showPercent?: boolean;
 }
 
 export function NutritionBar({
@@ -18,6 +19,7 @@ export function NutritionBar({
   maxValue,
   color,
   isRTL = false,
+  showPercent = false,
 }: NutritionBarProps) {
   const colors = useColors();
   const animWidth = useRef(new Animated.Value(0)).current;
@@ -26,7 +28,7 @@ export function NutritionBar({
   useEffect(() => {
     Animated.timing(animWidth, {
       toValue: pct,
-      duration: 800,
+      duration: 900,
       useNativeDriver: false,
     }).start();
   }, [pct, animWidth]);
@@ -35,7 +37,7 @@ export function NutritionBar({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.row, isRTL && styles.rowRTL]}>
+      <View style={[styles.row, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
         <Text
           style={[
             styles.label,
@@ -45,7 +47,14 @@ export function NutritionBar({
           {label}
         </Text>
         <Text style={[styles.value, { color: colors.mutedForeground }]}>
-          {value.toFixed(1)} {unit}
+          {value.toFixed(1)}
+          {unit}
+          {showPercent && (
+            <Text style={{ color: colors.mutedForeground + "80" }}>
+              {" "}
+              ({Math.round(pct)}%)
+            </Text>
+          )}
         </Text>
       </View>
       <View
@@ -76,15 +85,11 @@ export function NutritionBar({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   row: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  rowRTL: {
-    flexDirection: "row-reverse",
+    marginBottom: 6,
   },
   label: {
     fontSize: 14,
@@ -95,12 +100,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   track: {
-    height: 6,
-    borderRadius: 3,
+    height: 7,
+    borderRadius: 4,
     overflow: "hidden",
   },
   fill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 4,
   },
 });

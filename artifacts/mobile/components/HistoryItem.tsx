@@ -24,7 +24,10 @@ export function HistoryItem({ analysis, onPress, onDelete }: HistoryItemProps) {
   const dateStr = date.toLocaleDateString(language === "ar" ? "ar-SA" : "en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+  });
+  const timeStr = date.toLocaleTimeString(language === "ar" ? "ar-SA" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   const score = Math.round(analysis.nutritionData.healthScore);
@@ -34,13 +37,25 @@ export function HistoryItem({ analysis, onPress, onDelete }: HistoryItemProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
-      activeOpacity={0.7}
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          shadowColor: colors.shadow,
+        },
+      ]}
+      activeOpacity={0.75}
     >
       <View style={[styles.inner, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        {/* Score indicator */}
-        <View style={[styles.scoreDot, { backgroundColor: scoreColor }]}>
-          <Text style={styles.scoreText}>{score}</Text>
+        {/* Score circle */}
+        <View
+          style={[
+            styles.scoreCircle,
+            { borderColor: scoreColor + "70", backgroundColor: scoreColor + "14" },
+          ]}
+        >
+          <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
         </View>
 
         {/* Info */}
@@ -55,39 +70,33 @@ export function HistoryItem({ analysis, onPress, onDelete }: HistoryItemProps) {
             {foodName}
           </Text>
           <View
-            style={[
-              styles.metaRow,
-              { flexDirection: isRTL ? "row-reverse" : "row" },
-            ]}
+            style={[styles.metaRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}
           >
-            <Feather name="zap" size={12} color={colors.accent} />
+            <Feather name="zap" size={11} color={colors.accent} />
             <Text style={[styles.meta, { color: colors.mutedForeground }]}>
-              {Math.round(analysis.nutritionData.calories)} kcal
+              {Math.round(analysis.nutritionData.calories)}{" "}
+              {language === "ar" ? "سعرة" : "kcal"}
             </Text>
-            <Text style={[styles.dot, { color: colors.border }]}>•</Text>
+            <View style={[styles.dot, { backgroundColor: colors.border }]} />
+            <Feather name="clock" size={11} color={colors.mutedForeground} />
             <Text style={[styles.meta, { color: colors.mutedForeground }]}>
-              {dateStr}
+              {dateStr} · {timeStr}
             </Text>
           </View>
         </View>
 
-        {/* Delete + Arrow */}
-        <View
-          style={[
-            styles.actions,
-            { flexDirection: isRTL ? "row-reverse" : "row" },
-          ]}
-        >
+        {/* Actions */}
+        <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <TouchableOpacity
             onPress={onDelete}
-            style={[styles.deleteBtn, { backgroundColor: colors.destructive + "15" }]}
+            style={[styles.deleteBtn, { backgroundColor: colors.destructive + "14" }]}
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
-            <Feather name="trash-2" size={15} color={colors.destructive} />
+            <Feather name="trash-2" size={14} color={colors.destructive} />
           </TouchableOpacity>
           <Feather
             name={isRTL ? "chevron-left" : "chevron-right"}
-            size={18}
+            size={17}
             color={colors.mutedForeground}
           />
         </View>
@@ -98,53 +107,55 @@ export function HistoryItem({ analysis, onPress, onDelete }: HistoryItemProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
-    overflow: "hidden",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   inner: {
     alignItems: "center",
     padding: 14,
     gap: 12,
   },
-  scoreDot: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  scoreCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
-  scoreText: {
-    color: "#FFFFFF",
+  scoreNum: {
     fontSize: 14,
     fontFamily: "Inter_700Bold",
   },
-  info: {
-    flex: 1,
-    gap: 4,
-  },
+  info: { flex: 1, gap: 5 },
   foodName: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
   metaRow: {
     alignItems: "center",
-    gap: 4,
+    gap: 5,
   },
   meta: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
   },
   dot: {
-    fontSize: 12,
+    width: 3,
+    height: 3,
+    borderRadius: 2,
   },
-  actions: {
-    alignItems: "center",
-    gap: 10,
-  },
+  actions: { alignItems: "center", gap: 10 },
   deleteBtn: {
-    padding: 6,
+    width: 30,
+    height: 30,
     borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

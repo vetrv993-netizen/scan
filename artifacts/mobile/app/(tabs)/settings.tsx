@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,30 +8,61 @@ import {
   Alert,
   Linking,
   Platform,
-  Switch,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
-import { useApp } from "@/context/AppContext";
+import { useApp, type ThemeMode } from "@/context/AppContext";
 import type { Language } from "@/constants/translations";
 import type { AIModel } from "@/types/nutrition";
 
 const AI_MODELS: AIModel[] = ["auto", "openai", "gemini", "claude"];
 
+function SectionTitle({
+  label,
+  isRTL,
+  colors,
+}: {
+  label: string;
+  isRTL: boolean;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <Text
+      style={[
+        styles.sectionTitle,
+        { color: colors.mutedForeground, textAlign: isRTL ? "right" : "left" },
+      ]}
+    >
+      {label.toUpperCase()}
+    </Text>
+  );
+}
+
+function SettingsCard({ children, colors }: { children: React.ReactNode; colors: ReturnType<typeof useColors> }) {
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          shadowColor: colors.shadow,
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const colors = useColors();
   const {
-    t,
-    isRTL,
-    language,
-    setLanguage,
-    themeMode,
-    setThemeMode,
-    isDark,
-    aiModel,
-    setAiModel,
-    clearHistory,
+    t, isRTL, language, setLanguage,
+    themeMode, setThemeMode,
+    aiModel, setAiModel,
+    clearHistory, clearMeal,
   } = useApp();
   const insets = useSafeAreaInsets();
 
@@ -39,209 +70,214 @@ export default function SettingsScreen() {
   const bottomPadding = Platform.OS === "web" ? 34 : insets.bottom;
 
   const handleClearHistory = () => {
-    Alert.alert(
-      t.settings.clearHistory,
-      t.settings.confirmClear,
-      [
-        { text: t.settings.no, style: "cancel" },
-        {
-          text: t.settings.yes,
-          style: "destructive",
-          onPress: clearHistory,
-        },
-      ]
-    );
+    Alert.alert(t.settings.clearHistory, t.settings.confirmClear, [
+      { text: t.settings.no, style: "cancel" },
+      { text: t.settings.yes, style: "destructive", onPress: clearHistory },
+    ]);
   };
 
-  const handleCall = () => {
-    Linking.openURL(`tel:${t.settings.developerPhone}`);
+  const handleClearMeal = () => {
+    Alert.alert(t.settings.clearMeal, t.settings.confirmClear, [
+      { text: t.settings.no, style: "cancel" },
+      { text: t.settings.yes, style: "destructive", onPress: clearMeal },
+    ]);
   };
 
-  const handleEmail = () => {
-    Linking.openURL(`mailto:${t.settings.developerEmail}`);
-  };
+  const handleCall = () => Linking.openURL(`tel:${t.settings.developerPhone}`);
+  const handleEmail = () => Linking.openURL(`mailto:${t.settings.developerEmail}`);
+
+  const themeOptions: { mode: ThemeMode; label: string; icon: string }[] = [
+    { mode: "light", label: t.settings.light, icon: "sun" },
+    { mode: "dark", label: t.settings.dark, icon: "moon" },
+    { mode: "system", label: t.settings.system, icon: "smartphone" },
+  ];
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={{
-        paddingTop: topPadding + 16,
+        paddingTop: topPadding + 20,
         paddingBottom: bottomPadding + 100,
         paddingHorizontal: 20,
+        gap: 24,
       }}
       showsVerticalScrollIndicator={false}
     >
-      <Text
-        style={[
-          styles.title,
-          { color: colors.foreground, textAlign: isRTL ? "right" : "left" },
-        ]}
-      >
+      <Text style={[styles.title, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>
         {t.settings.title}
       </Text>
 
       {/* Language */}
-      <SettingsSection title={t.settings.language} isRTL={isRTL} colors={colors}>
-        <View style={[styles.optionRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          {(["ar", "en"] as Language[]).map((lang) => (
-            <TouchableOpacity
-              key={lang}
-              style={[
-                styles.optionChip,
-                {
-                  backgroundColor:
-                    language === lang ? colors.primary : colors.card,
-                  borderColor:
-                    language === lang ? colors.primary : colors.border,
-                  flex: 1,
-                },
-              ]}
-              onPress={() => setLanguage(lang)}
-            >
-              <Text
+      <View style={styles.section}>
+        <SectionTitle label={t.settings.language} isRTL={isRTL} colors={colors} />
+        <SettingsCard colors={colors}>
+          <View style={[styles.optionRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            {(["ar", "en"] as Language[]).map((lang) => (
+              <TouchableOpacity
+                key={lang}
                 style={[
-                  styles.optionText,
+                  styles.segChip,
                   {
-                    color:
-                      language === lang
-                        ? colors.primaryForeground
-                        : colors.foreground,
-                    textAlign: "center",
+                    flex: 1,
+                    backgroundColor: language === lang ? colors.primary : "transparent",
+                    borderColor: language === lang ? colors.primary : colors.border,
                   },
                 ]}
+                onPress={() => setLanguage(lang)}
               >
-                {lang === "ar" ? t.settings.arabic : t.settings.english}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </SettingsSection>
+                <Text
+                  style={[
+                    styles.segText,
+                    { color: language === lang ? colors.primaryForeground : colors.foreground },
+                  ]}
+                >
+                  {lang === "ar" ? t.settings.arabic : t.settings.english}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </SettingsCard>
+      </View>
 
       {/* Appearance */}
-      <SettingsSection title={t.settings.appearance} isRTL={isRTL} colors={colors}>
-        <View style={[styles.optionRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          {(["light", "dark", "system"] as const).map((mode) => {
-            const label =
-              mode === "light"
-                ? t.settings.lightMode
-                : mode === "dark"
-                  ? t.settings.darkMode
-                  : t.settings.systemDefault;
-            return (
+      <View style={styles.section}>
+        <SectionTitle label={t.settings.appearance} isRTL={isRTL} colors={colors} />
+        <SettingsCard colors={colors}>
+          <View style={[styles.optionRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            {themeOptions.map(({ mode, label, icon }) => (
               <TouchableOpacity
                 key={mode}
                 style={[
-                  styles.optionChip,
+                  styles.segChip,
                   {
-                    backgroundColor:
-                      themeMode === mode ? colors.primary : colors.card,
-                    borderColor:
-                      themeMode === mode ? colors.primary : colors.border,
                     flex: 1,
+                    backgroundColor: themeMode === mode ? colors.primary : "transparent",
+                    borderColor: themeMode === mode ? colors.primary : colors.border,
                   },
                 ]}
                 onPress={() => setThemeMode(mode)}
               >
+                <Feather
+                  name={icon as "sun"}
+                  size={14}
+                  color={themeMode === mode ? colors.primaryForeground : colors.mutedForeground}
+                />
                 <Text
                   style={[
-                    styles.optionText,
-                    {
-                      color:
-                        themeMode === mode
-                          ? colors.primaryForeground
-                          : colors.foreground,
-                      textAlign: "center",
-                      fontSize: 12,
-                    },
+                    styles.segText,
+                    { color: themeMode === mode ? colors.primaryForeground : colors.foreground, fontSize: 12 },
                   ]}
                 >
                   {label}
                 </Text>
               </TouchableOpacity>
-            );
-          })}
-        </View>
-      </SettingsSection>
+            ))}
+          </View>
+        </SettingsCard>
+      </View>
 
-      {/* AI Model */}
-      <SettingsSection title={t.settings.aiModel} isRTL={isRTL} colors={colors}>
-        {AI_MODELS.map((m) => (
-          <TouchableOpacity
-            key={m}
+      {/* AI Models (advanced) */}
+      <View style={styles.section}>
+        <SectionTitle label={t.settings.aiSection} isRTL={isRTL} colors={colors} />
+        <SettingsCard colors={colors}>
+          <Text
             style={[
-              styles.radioRow,
-              {
-                backgroundColor: aiModel === m ? colors.primary + "10" : "transparent",
-                borderColor: aiModel === m ? colors.primary : colors.border,
-                flexDirection: isRTL ? "row-reverse" : "row",
-              },
+              styles.cardSubLabel,
+              { color: colors.mutedForeground, textAlign: isRTL ? "right" : "left" },
             ]}
-            onPress={() => setAiModel(m)}
           >
-            <View
+            {t.settings.aiModel}
+          </Text>
+          {AI_MODELS.map((m) => (
+            <TouchableOpacity
+              key={m}
               style={[
-                styles.radioOuter,
-                { borderColor: aiModel === m ? colors.primary : colors.border },
+                styles.radioRow,
+                {
+                  backgroundColor: aiModel === m ? colors.primary + "0E" : "transparent",
+                  borderColor: aiModel === m ? colors.primary : colors.border,
+                  flexDirection: isRTL ? "row-reverse" : "row",
+                },
               ]}
+              onPress={() => setAiModel(m)}
             >
-              {aiModel === m && (
-                <View
-                  style={[styles.radioInner, { backgroundColor: colors.primary }]}
-                />
-              )}
-            </View>
-            <View style={[styles.radioContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-              <Text style={[styles.radioLabel, { color: colors.foreground }]}>
-                {t.analyze.models[m]}
-              </Text>
-              {m === "auto" && (
-                <Text style={[styles.radioHint, { color: colors.mutedForeground }]}>
-                  {isRTL ? "يجرب جميع النماذج تلقائياً" : "Tries all models automatically"}
+              <View
+                style={[
+                  styles.radioOuter,
+                  { borderColor: aiModel === m ? colors.primary : colors.border },
+                ]}
+              >
+                {aiModel === m && (
+                  <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />
+                )}
+              </View>
+              <View style={[styles.radioContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+                <Text style={[styles.radioLabel, { color: colors.foreground }]}>
+                  {t.analyze.models[m]}
                 </Text>
-              )}
-            </View>
-          </TouchableOpacity>
-        ))}
-      </SettingsSection>
+                {m === "auto" && (
+                  <Text style={[styles.radioHint, { color: colors.mutedForeground }]}>
+                    {isRTL ? "يستخدم أسرع نموذج تلقائياً" : "Uses the fastest available model"}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </SettingsCard>
+      </View>
 
       {/* Data */}
-      <SettingsSection title={t.settings.data} isRTL={isRTL} colors={colors}>
-        <TouchableOpacity
-          style={[
-            styles.actionRow,
-            {
-              backgroundColor: colors.destructive + "10",
-              borderColor: colors.destructive + "30",
-              flexDirection: isRTL ? "row-reverse" : "row",
-            },
-          ]}
-          onPress={handleClearHistory}
-        >
-          <Feather name="trash-2" size={18} color={colors.destructive} />
-          <View style={[styles.actionContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-            <Text style={[styles.actionLabel, { color: colors.destructive }]}>
-              {t.settings.clearHistory}
-            </Text>
-            <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>
-              {t.settings.clearHistoryDesc}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </SettingsSection>
+      <View style={styles.section}>
+        <SectionTitle label={t.settings.data} isRTL={isRTL} colors={colors} />
+        <SettingsCard colors={colors}>
+          <ActionRow
+            icon="clock"
+            label={t.settings.clearHistory}
+            hint={t.settings.clearHistoryDesc}
+            onPress={handleClearHistory}
+            isRTL={isRTL}
+            colors={colors}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <ActionRow
+            icon="pie-chart"
+            label={t.settings.clearMeal}
+            hint={t.settings.clearMealDesc}
+            onPress={handleClearMeal}
+            isRTL={isRTL}
+            colors={colors}
+          />
+        </SettingsCard>
+      </View>
 
       {/* Developer */}
-      <SettingsSection title={t.settings.developer} isRTL={isRTL} colors={colors}>
-        <View style={[styles.devCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.section}>
+        <SectionTitle label={t.settings.developer} isRTL={isRTL} colors={colors} />
+        <View
+          style={[
+            styles.devCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              shadowColor: colors.shadow,
+            },
+          ]}
+        >
           <View style={[styles.devHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <View style={[styles.devAvatar, { backgroundColor: colors.primary }]}>
-              <Feather name="user" size={24} color="#FFFFFF" />
+              <Feather name="user" size={26} color={colors.primaryForeground} />
             </View>
             <View style={[styles.devInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-              <Text style={[styles.devName, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>
+              <Text
+                style={[
+                  styles.devName,
+                  { color: colors.foreground, textAlign: isRTL ? "right" : "left" },
+                ]}
+              >
                 {t.settings.developerName}
               </Text>
               <Text style={[styles.devRole, { color: colors.mutedForeground }]}>
-                {isRTL ? "مطور ومصمم التطبيق" : "App Developer & Designer"}
+                {isRTL ? "مطور التطبيق" : "App Developer"}
               </Text>
             </View>
           </View>
@@ -250,228 +286,144 @@ export default function SettingsScreen() {
               style={[styles.devBtn, { backgroundColor: colors.primary, flex: 1 }]}
               onPress={handleCall}
             >
-              <Feather name="phone" size={16} color="#FFFFFF" />
-              <Text style={styles.devBtnText}>{t.settings.call}</Text>
+              <Feather name="phone" size={15} color={colors.primaryForeground} />
+              <Text style={[styles.devBtnText, { color: colors.primaryForeground }]}>
+                {t.settings.call}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.devBtn,
-                {
-                  backgroundColor: colors.secondary,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  flex: 1,
-                },
+                { backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border, flex: 1 },
               ]}
               onPress={handleEmail}
             >
-              <Feather name="mail" size={16} color={colors.primary} />
+              <Feather name="mail" size={15} color={colors.primary} />
               <Text style={[styles.devBtnText, { color: colors.primary }]}>
                 {t.settings.email}
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.contactInfo}>
-            <View style={[styles.contactRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-              <Feather name="phone" size={13} color={colors.mutedForeground} />
-              <Text style={[styles.contactText, { color: colors.mutedForeground }]}>
-                {t.settings.developerPhone}
-              </Text>
-            </View>
-            <View style={[styles.contactRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-              <Feather name="mail" size={13} color={colors.mutedForeground} />
-              <Text style={[styles.contactText, { color: colors.mutedForeground }]}>
-                {t.settings.developerEmail}
-              </Text>
-            </View>
+          <View style={styles.contactList}>
+            {[
+              { icon: "phone", text: t.settings.developerPhone },
+              { icon: "mail", text: t.settings.developerEmail },
+            ].map((c, i) => (
+              <View key={i} style={[styles.contactRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Feather name={c.icon as "phone"} size={13} color={colors.mutedForeground} />
+                <Text style={[styles.contactText, { color: colors.mutedForeground }]}>{c.text}</Text>
+              </View>
+            ))}
           </View>
         </View>
-      </SettingsSection>
+      </View>
 
-      {/* Version */}
-      <Text style={[styles.versionText, { color: colors.mutedForeground }]}>
-        {t.settings.version} 1.0.0 · Smart Nutrition AI
+      <Text style={[styles.version, { color: colors.mutedForeground }]}>
+        {t.settings.version} 2.0 · Smart Nutrition AI
       </Text>
     </ScrollView>
   );
 }
 
-function SettingsSection({
-  title,
-  children,
+function ActionRow({
+  icon,
+  label,
+  hint,
+  onPress,
   isRTL,
   colors,
 }: {
-  title: string;
-  children: React.ReactNode;
+  icon: string;
+  label: string;
+  hint: string;
+  onPress: () => void;
   isRTL: boolean;
   colors: ReturnType<typeof useColors>;
 }) {
   return (
-    <View style={styles.section}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: colors.mutedForeground, textAlign: isRTL ? "right" : "left" },
-        ]}
-      >
-        {title.toUpperCase()}
-      </Text>
-      <View style={[styles.sectionBody, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {children}
+    <TouchableOpacity
+      style={[styles.actionRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}
+      onPress={onPress}
+    >
+      <View style={[styles.actionIcon, { backgroundColor: colors.destructive + "14" }]}>
+        <Feather name={icon as "clock"} size={16} color={colors.destructive} />
       </View>
-    </View>
+      <View style={[styles.actionContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+        <Text style={[styles.actionLabel, { color: colors.destructive }]}>{label}</Text>
+        <Text style={[styles.actionHint, { color: colors.mutedForeground }]}>{hint}</Text>
+      </View>
+      <Feather
+        name={isRTL ? "chevron-left" : "chevron-right"}
+        size={16}
+        color={colors.mutedForeground}
+      />
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  title: {
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 24,
-  },
-  section: { marginBottom: 24 },
+  title: { fontSize: 26, fontFamily: "Inter_700Bold" },
+  section: { gap: 8 },
   sectionTitle: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    fontSize: 12, fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.9, paddingHorizontal: 4,
   },
-  sectionBody: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-    padding: 14,
-    gap: 10,
+  card: {
+    borderRadius: 16, borderWidth: 1, padding: 14, gap: 10,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
-  optionRow: {
-    gap: 8,
+  cardSubLabel: { fontSize: 13, fontFamily: "Inter_500Medium", marginBottom: 4 },
+  optionRow: { gap: 8 },
+  segChip: {
+    paddingVertical: 10, paddingHorizontal: 8,
+    borderRadius: 11, borderWidth: 1,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
   },
-  optionChip: {
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  optionText: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-  },
+  segText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   radioRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    padding: 12, borderRadius: 11, borderWidth: 1,
   },
   radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2,
+    alignItems: "center", justifyContent: "center",
   },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  radioContent: {
-    flex: 1,
-    gap: 2,
-  },
-  radioLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-  },
-  radioHint: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
+  radioInner: { width: 10, height: 10, borderRadius: 5 },
+  radioContent: { flex: 1, gap: 2 },
+  radioLabel: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  radioHint: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  divider: { height: 1, marginHorizontal: 4 },
   actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
+    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 6,
   },
-  actionContent: {
-    flex: 1,
-    gap: 2,
+  actionIcon: {
+    width: 38, height: 38, borderRadius: 11,
+    alignItems: "center", justifyContent: "center",
   },
-  actionLabel: {
-    fontSize: 15,
-    fontFamily: "Inter_500Medium",
-  },
-  actionHint: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
+  actionContent: { flex: 1, gap: 2 },
+  actionLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  actionHint: { fontSize: 12, fontFamily: "Inter_400Regular" },
   devCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    gap: 14,
+    borderRadius: 18, borderWidth: 1, padding: 18, gap: 16,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
   },
-  devHeader: {
-    alignItems: "center",
-    gap: 14,
-  },
+  devHeader: { alignItems: "center", gap: 14 },
   devAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 60, height: 60, borderRadius: 18,
+    alignItems: "center", justifyContent: "center",
   },
-  devInfo: {
-    flex: 1,
-    gap: 3,
-  },
-  devName: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-  },
-  devRole: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-  },
-  devActions: {
-    gap: 10,
-  },
+  devInfo: { flex: 1, gap: 4 },
+  devName: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  devRole: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  devActions: { gap: 10 },
   devBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 11,
-    borderRadius: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 7, paddingVertical: 11, borderRadius: 12,
   },
-  devBtnText: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    color: "#FFFFFF",
-  },
-  contactInfo: {
-    gap: 6,
-  },
-  contactRow: {
-    alignItems: "center",
-    gap: 6,
-  },
-  contactText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-  },
-  versionText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    marginTop: 8,
-  },
+  devBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  contactList: { gap: 8 },
+  contactRow: { alignItems: "center", gap: 8 },
+  contactText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  version: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
 });
