@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "Smart Nutrition AI Analyzer",
-    "slug": "mobile",
+    "slug": "scan-",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "owner": "smartnutritionai",
+    "owner": "obadobad2030",
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
