@@ -15,11 +15,7 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      },
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "599d8bc7-0eed-4442-8140-d670cc2312f2-00-2g32o7xa43gl4.expo.pike.replit.dev"
+        "buildType": "apk"
       }
     },
     "production-apk": {
@@ -27,18 +23,11 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
-      },
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "599d8bc7-0eed-4442-8140-d670cc2312f2-00-2g32o7xa43gl4.expo.pike.replit.dev"
       }
     },
     "production": {
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
-      },
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "599d8bc7-0eed-4442-8140-d670cc2312f2-00-2g32o7xa43gl4.expo.pike.replit.dev"
+        "buildType": "app-bundle"
       }
     }
   },
